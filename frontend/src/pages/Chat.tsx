@@ -7,11 +7,18 @@ import {
     Grid,
     GridItem,
     IconButton,
+    Input,
     Menu,
     MenuButton,
     MenuDivider,
     MenuItem,
     MenuList,
+    Modal,
+    ModalBody,
+    ModalCloseButton,
+    ModalContent,
+    ModalHeader,
+    ModalOverlay,
     Skeleton,
     Spinner,
     Tab,
@@ -21,7 +28,7 @@ import {
     TabPanels,
     Tabs,
     Text,
-    // useBoolean,
+    useDisclosure,
 } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -33,17 +40,18 @@ import {
 } from "react-icons/ai";
 import { Socket, io } from "socket.io-client";
 import ChatBox from "../components/ChatBox";
+import ContactList from "../components/ContactList";
 import ConversationList from "../components/ConversationList";
 import { useAuth } from "../contexts/auth/hooks";
 import { useUser } from "../contexts/user/hooks";
 import { fetchConversations } from "../services/conversations";
-// import { searchUser } from "../services/user";
+import { searchUser } from "../services/user";
 
 export default function ChatPage() {
     const { loggedOut } = useAuth();
     const { user } = useUser();
-    // const [showSearchContact, { on, off }] = useBoolean(false);
-    // const [searchQuery, setSearchQuery] = useState<string>("");
+    const { isOpen, onOpen, onClose } = useDisclosure();
+    const [searchQuery, setSearchQuery] = useState<string>("");
 
     const {
         status,
@@ -55,15 +63,15 @@ export default function ChatPage() {
         queryFn: fetchConversations,
     });
 
-    // const {
-    //     status: searchStatus,
-    //     data: searchResult = [],
-    //     error: searchError,
-    // } = useQuery({
-    //     queryKey: ["search", searchQuery],
-    //     queryFn: ({ signal }) => searchUser(searchQuery, { signal }),
-    //     enabled: searchQuery.length != 0,
-    // });
+    const {
+        status: searchStatus,
+        data: searchResult = [],
+        // error: searchError,
+    } = useQuery({
+        queryKey: ["search"],
+        queryFn: ({ signal }) => searchUser(searchQuery, { signal }),
+        enabled: searchQuery.length != 0,
+    });
 
     const [selectedConversationId, setSelectedConversationId] =
         useState<Conversation["id"]>();
@@ -74,7 +82,7 @@ export default function ChatPage() {
     useEffect(() => {
         if (user && !socketRef.current) {
             const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
-                io(import.meta.env.VITE_BACKEND_SERVICE_URL);
+                io(import.meta.env.VITE_WS_SERVICE_URI);
 
             socket.on("connect", () => {
                 socket.emit("setup", user);
@@ -186,11 +194,6 @@ export default function ChatPage() {
                                 </MenuList>
                             </Menu>
                             <Divider border={0} />
-                            {/* <SearchContactBox
-                                onFocus={on}
-                                onBlur={off}
-                                onChange={setSearchQuery}
-                            /> */}
                             <IconButton
                                 icon={<AiOutlineSearch />}
                                 aria-label="Search contact"
@@ -198,6 +201,7 @@ export default function ChatPage() {
                             <IconButton
                                 icon={<AiOutlineUserAdd />}
                                 aria-label="Add friend"
+                                onClick={onOpen}
                             />
                             <IconButton
                                 icon={<AiOutlineUsergroupAdd />}
@@ -207,24 +211,26 @@ export default function ChatPage() {
                     </GridItem>
 
                     <GridItem area={"list"}>
-                        <Tabs position="relative" variant="unstyled" h={"full"}>
+                        <Tabs
+                            position="relative"
+                            variant="unstyled"
+                            display={"flex"}
+                            flexDir={"column"}
+                            h={"full"}
+                        >
                             <TabList gap={2} px={2}>
                                 <Tab px={0}>Chats</Tab>
                                 <Tab px={0}>Contacts</Tab>
                             </TabList>
                             <TabIndicator
+                                top={"10"}
                                 mt="-1.5px"
                                 height="2px"
                                 bg="green.400"
                                 borderRadius="1px"
                             />
-                            <TabPanels flex={1} py={2}>
-                                <TabPanel
-                                    p={0}
-                                    h={"full"}
-                                    overflowY={"auto"}
-                                    overscrollBehavior={"contain"}
-                                >
+                            <TabPanels h={"full"} py={2} overflowY={"auto"}>
+                                <TabPanel p={"0"}>
                                     <ConversationList
                                         conversations={conversations}
                                         onSelectConversation={
@@ -235,8 +241,8 @@ export default function ChatPage() {
                                         }
                                     />
                                 </TabPanel>
-                                <TabPanel>
-                                    <p>Contacts</p>
+                                <TabPanel p={"0"}>
+                                    <ContactList contacts={user.friends} />
                                 </TabPanel>
                             </TabPanels>
                         </Tabs>
@@ -249,6 +255,48 @@ export default function ChatPage() {
                     </GridItem>
                 </Grid>
             </Skeleton>
+
+            <Modal
+                isOpen={isOpen}
+                onClose={onClose}
+                onCloseComplete={() => {
+                    setSearchQuery("");
+                    client.removeQueries(["search"]);
+                }}
+            >
+                <ModalOverlay />
+                <ModalContent>
+                    <ModalHeader>Add Friends</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody minH={"48"}>
+                        <Input
+                            placeholder="Search friend"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+
+                        <Box>
+                            {searchStatus === "loading"
+                                ? ""
+                                : searchResult.length === 0 &&
+                                  searchQuery.length == 0
+                                ? "Find someone"
+                                : searchResult.length === 0
+                                ? "No result"
+                                : searchResult.map((user) => (
+                                      <Box key={user.id}>{user.username}</Box>
+                                  ))}
+                        </Box>
+                    </ModalBody>
+
+                    {/* <ModalFooter>
+                        <Button colorScheme="purple" mr={3} onClick={onClose}>
+                            Close
+                        </Button>
+                        <Button variant="ghost">Secondary Action</Button>
+                    </ModalFooter> */}
+                </ModalContent>
+            </Modal>
         </Box>
     );
 }

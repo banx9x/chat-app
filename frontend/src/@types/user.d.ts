@@ -2,6 +2,7 @@ interface User {
     id: string;
     username: string;
     email: string;
+    friends: User[];
     createdAt: string;
     updatedAt: string;
 }

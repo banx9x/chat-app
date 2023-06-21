@@ -42,11 +42,15 @@ export default function ChatBox({ conversationId }: ChatBoxProps) {
                 sender: user,
                 content,
                 createdAt: new Date().toLocaleString(),
-                updatedAt: new Date().toLocaleDateString(),
+                updatedAt: new Date().toLocaleString(),
             };
 
             await client.cancelQueries({
                 queryKey: ["conversation", conversationId],
+            });
+
+            await client.cancelQueries({
+                queryKey: ["conversations"],
             });
 
             await client.cancelQueries({
@@ -63,6 +67,19 @@ export default function ChatBox({ conversationId }: ChatBoxProps) {
                         messages: [...old.messages, newMessage],
                         latestMessage: newMessage,
                     };
+                }
+            );
+
+            client.setQueryData(
+                ["conversations"],
+                (old?: ConversationPreview[]) => {
+                    if (!old) return old;
+
+                    return old.map((conversation) =>
+                        conversation.id == conversationId
+                            ? { ...conversation, latestMessage: newMessage }
+                            : conversation
+                    );
                 }
             );
 

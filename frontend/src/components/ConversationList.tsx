@@ -30,7 +30,7 @@ export function ConversationItem({
     return (
         <Box
             p={2}
-            borderRadius={"3xl"}
+            borderRadius={"2xl"}
             _hover={{ bg: "gray.100" }}
             onClick={() => onSelect(conversation.id)}
             bg={isSelected ? "gray.100" : ""}
@@ -105,14 +105,28 @@ export default function ConversationList({
 }: ConversationListProps) {
     return (
         <Flex flexDir={"column"}>
-            {conversations.map((conversation) => (
-                <ConversationItem
-                    key={conversation.id}
-                    conversation={conversation}
-                    onSelect={onSelectConversation}
-                    isSelected={selectedConversationId === conversation.id}
-                />
-            ))}
+            {conversations
+                .sort(
+                    (a, b) =>
+                        new Date(
+                            b.latestMessage
+                                ? b.latestMessage.createdAt
+                                : b.updatedAt
+                        ).getTime() -
+                        new Date(
+                            a.latestMessage
+                                ? a.latestMessage.createdAt
+                                : b.updatedAt
+                        ).getTime()
+                )
+                .map((conversation) => (
+                    <ConversationItem
+                        key={conversation.id}
+                        conversation={conversation}
+                        onSelect={onSelectConversation}
+                        isSelected={selectedConversationId === conversation.id}
+                    />
+                ))}
         </Flex>
     );
 }

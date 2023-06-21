@@ -36,21 +36,13 @@ app.use(cookieParser());
 
 app.use("/api/users", usersRouter);
 app.use("/api/conversations", conversationsRouter);
+app.use(express.static(path.join(__dirname, "public")));
 
 if (process.env.NODE_ENV === "production") {
-    const baseDir = path.resolve(__dirname, "..");
-    const publicDir = path.join(baseDir, "frontend", "dist");
-    app.use(express.static(publicDir));
-
     app.get("*", (req, res, next) => {
-        try {
-            return res.sendFile(path.join(publicDir, "index.html"));
-        } catch (error) {
-            next(error);
-        }
+        return res.sendFile(path.join(__dirname, "public", "index.html"));
     });
 } else {
-    app.use(express.static(path.join(__dirname, "public")));
     app.use("/", indexRouter);
 }
 

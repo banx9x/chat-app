@@ -4,6 +4,12 @@ interface ServerToClientEvents {
         message: Message,
         conversationId: Conversation["id"]
     ) => void;
+    acceptedFriendRequest: () => void;
+    joinedGroup: () => void;
+    leaveGroup: () => void;
+    typing: () => void;
+    stopTyping: () => void;
+    seen: () => void;
 }
 
 interface ClientToServerEvents {
@@ -11,4 +17,5 @@ interface ClientToServerEvents {
     connected: () => void;
     typing: () => void;
     stopTyping: () => void;
+    seen: () => void;
 }

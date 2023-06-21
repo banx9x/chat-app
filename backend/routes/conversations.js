@@ -13,9 +13,11 @@ const router = express.Router();
 
 router.get("/", authenticate, fetchConversations);
 router.post("/", authenticate, fetchOrCreateConversation);
-router.post("/groups", authenticate, createGroup);
 router.get("/:conversationId", authenticate, fetchConversation);
-router.post("/:conversationId/participants", authenticate, addParticipant);
 router.post("/:conversationId/messages", authenticate, postMessage);
+// router.delete("/:conversationId/messages/:messageId", authenticate, deleteMessage)
+router.post("/groups", authenticate, createGroup);
+router.put("/:groupId/participants", authenticate, addParticipant);
+// router.delete("/:groupId/participants/:participantId", authenticate, removeParticipant)
 
 module.exports = router;

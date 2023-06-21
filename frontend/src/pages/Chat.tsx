@@ -1,4 +1,3 @@
-import { ArrowLeftIcon } from "@chakra-ui/icons";
 import {
     Avatar,
     Box,
@@ -22,7 +21,7 @@ import {
     TabPanels,
     Tabs,
     Text,
-    useBoolean,
+    // useBoolean,
 } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -35,18 +34,16 @@ import {
 import { Socket, io } from "socket.io-client";
 import ChatBox from "../components/ChatBox";
 import ConversationList from "../components/ConversationList";
-import Options from "../components/Options";
-import SearchContactBox from "../components/SearchContactBox";
 import { useAuth } from "../contexts/auth/hooks";
 import { useUser } from "../contexts/user/hooks";
 import { fetchConversations } from "../services/conversations";
-import { searchUser } from "../services/user";
+// import { searchUser } from "../services/user";
 
 export default function ChatPage() {
     const { loggedOut } = useAuth();
     const { user } = useUser();
-    const [showSearchContact, { on, off }] = useBoolean(false);
-    const [searchQuery, setSearchQuery] = useState<string>("");
+    // const [showSearchContact, { on, off }] = useBoolean(false);
+    // const [searchQuery, setSearchQuery] = useState<string>("");
 
     const {
         status,
@@ -58,15 +55,15 @@ export default function ChatPage() {
         queryFn: fetchConversations,
     });
 
-    const {
-        status: searchStatus,
-        data: searchResult = [],
-        error: searchError,
-    } = useQuery({
-        queryKey: ["search", searchQuery],
-        queryFn: ({ signal }) => searchUser(searchQuery, { signal }),
-        enabled: searchQuery.length != 0,
-    });
+    // const {
+    //     status: searchStatus,
+    //     data: searchResult = [],
+    //     error: searchError,
+    // } = useQuery({
+    //     queryKey: ["search", searchQuery],
+    //     queryFn: ({ signal }) => searchUser(searchQuery, { signal }),
+    //     enabled: searchQuery.length != 0,
+    // });
 
     const [selectedConversationId, setSelectedConversationId] =
         useState<Conversation["id"]>();
@@ -77,7 +74,7 @@ export default function ChatPage() {
     useEffect(() => {
         if (user && !socketRef.current) {
             const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
-                io("http://localhost:3000/");
+                io(import.meta.env.VITE_BACKEND_SERVICE_URL);
 
             socket.on("connect", () => {
                 socket.emit("setup", user);

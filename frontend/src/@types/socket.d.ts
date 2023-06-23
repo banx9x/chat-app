@@ -1,21 +1,41 @@
 interface ServerToClientEvents {
-    connected: () => void;
-    receivedMessage: (
+    // System
+    "socket:connected": () => void;
+
+    // User
+    "user:received-friend-request": (user: User) => void;
+    "user:accepted-friend-request": (user: User) => void;
+    "user:rejected-friend-request": (user: User) => void;
+
+    // Conversation
+    "conversation:created": (conversation: SingleConversation) => void;
+    "conversation:deleted": () => void;
+    "conversation:typing": () => void;
+    "conversation:stop-typing": () => void;
+    "conversation:seen": () => void;
+
+    "conversation:messages:received": (
         message: Message,
-        conversationId: Conversation["id"]
+        conversationId: ConversationId
     ) => void;
-    acceptedFriendRequest: () => void;
-    joinedGroup: () => void;
-    leaveGroup: () => void;
-    typing: () => void;
-    stopTyping: () => void;
-    seen: () => void;
+    "conversation:messages:deleted";
+
+    // Group
+    "group:created": (group: GroupConversation) => void;
+    "group:added": (group: GroupConversation) => void;
+    "group:removed": (group: GroupConversation) => void;
+    "group:joined": (user: User, group: GroupConversation) => void;
+    "group:left": (user: User, group: GroupConversation) => void;
+    "group:deleted": (group: GroupConversation) => void;
 }
 
 interface ClientToServerEvents {
-    setup: (user: User) => void;
-    connected: () => void;
-    typing: () => void;
-    stopTyping: () => void;
-    seen: () => void;
+    // System
+    "socket:setup": (user: User) => void;
+
+    // User
+
+    // Conversation
+    "conversation:typing": () => void;
+    "conversation:stop-typing": () => void;
 }

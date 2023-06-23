@@ -11,7 +11,6 @@ const messageSchema = new Schema(
         },
         content: {
             type: Schema.Types.String,
-            index: true,
             required: true,
             trim: true,
             index: "text",
@@ -74,7 +73,6 @@ const conversationSchema = new Schema(
     {
         autoIndex: false,
         timestamps: true,
-        methods: {},
         statics: {},
         virtuals: {},
         toJSON: {
@@ -84,6 +82,11 @@ const conversationSchema = new Schema(
             transform: (doc, ret, options) => {
                 delete ret._id;
                 return ret;
+            },
+        },
+        methods: {
+            isAdmin(user) {
+                return this.admin._id.equals(user._id);
             },
         },
     }

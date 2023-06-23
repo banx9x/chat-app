@@ -48,10 +48,9 @@ export default function LoginPage() {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             toast.update(toastRef.current!, {
                 title: "Login Success",
-                description: `Welcome back ${res.data.data.username} 🤟`,
+                description: `Welcome back ${res.data.data.displayName} 🤟`,
                 status: "success",
                 isClosable: true,
-                duration: 3000,
             });
 
             loggedIn(res.data);
@@ -68,11 +67,10 @@ export default function LoginPage() {
                 title: "Login Failed",
                 description:
                     axios.isAxiosError(error) && error.response
-                        ? (error.response.data as LoginFailed).error
+                        ? (error.response.data as ServerError).error
                         : error.message,
                 status: "error",
                 isClosable: true,
-                duration: 3000,
             });
         },
     });
@@ -82,9 +80,7 @@ export default function LoginPage() {
             title: "Login...",
             description: "",
             status: "loading",
-            duration: 3000,
             isClosable: false,
-            position: "top",
         });
         login.mutate(values);
     };

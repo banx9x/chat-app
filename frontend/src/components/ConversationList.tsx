@@ -40,7 +40,7 @@ export function ConversationItem({
                     name={
                         conversation.isGroup
                             ? conversation.groupName
-                            : participant?.username
+                            : participant?.displayName
                     }
                 />
 
@@ -53,7 +53,7 @@ export function ConversationItem({
                     >
                         {conversation.isGroup
                             ? conversation.groupName
-                            : participant?.username}
+                            : participant?.displayName}
                     </Heading>
 
                     <Text noOfLines={1} fontSize={"sm"} color={"gray.700"}>
@@ -81,7 +81,7 @@ export function ConversationItem({
                             {conversation.participants.map((participant) => (
                                 <Avatar
                                     key={participant.id}
-                                    name={participant.username}
+                                    name={participant.displayName}
                                 />
                             ))}
                         </AvatarGroup>

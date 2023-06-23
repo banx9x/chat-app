@@ -13,9 +13,9 @@ export default function ContactItem({ contact }: ContactItemProps) {
             _hover={{ bg: "gray.100" }}
             borderRadius={"2xl"}
         >
-            <Avatar name={contact.username} />
+            <Avatar name={contact.displayName} />
 
-            <Text fontWeight={"medium"}>{contact.username}</Text>
+            <Text fontWeight={"medium"}>{contact.displayName}</Text>
         </Flex>
     );
 }

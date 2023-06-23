@@ -29,6 +29,7 @@ import {
     Tabs,
     Text,
     useDisclosure,
+    useToast,
 } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -52,6 +53,7 @@ export default function ChatPage() {
     const { user } = useUser();
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [searchQuery, setSearchQuery] = useState<string>("");
+    const toast = useToast();
 
     const {
         status,
@@ -82,13 +84,15 @@ export default function ChatPage() {
     useEffect(() => {
         if (user && !socketRef.current) {
             const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
-                io(import.meta.env.VITE_WS_SERVICE_URI);
+                io();
+
+            socket.connect();
 
             socket.on("connect", () => {
-                socket.emit("setup", user);
+                socket.emit("socket:setup", user);
             });
 
-            socket.on("connected", () => {
+            socket.on("socket:connected", () => {
                 console.log("Connected to server");
             });
 
@@ -104,7 +108,7 @@ export default function ChatPage() {
             });
 
             socket.on(
-                "receivedMessage",
+                "conversation:messages:received",
                 (message: Message, conversationId: Conversation["id"]) => {
                     client.setQueryData(
                         ["conversations"],
@@ -135,6 +139,74 @@ export default function ChatPage() {
                 }
             );
 
+            socket.on("group:created", async (group) => {
+                client.setQueryData(
+                    ["conversations"],
+                    (old?: ConversationPreview[]) => {
+                        if (!old) return old;
+
+                        return [...old, group];
+                    }
+                );
+
+                toast({
+                    title: "Notification",
+                    description: "Your have been added to a new group",
+                });
+            });
+
+            socket.on("group:added", async (group) => {
+                client.setQueryData(
+                    ["conversations"],
+                    (old?: ConversationPreview[]) => {
+                        if (!old) return old;
+
+                        return [...old, group];
+                    }
+                );
+
+                toast({
+                    title: "Notification",
+                    description: "You have been added to new group",
+                });
+            });
+
+            socket.on("group:removed", (group) => {
+                client.setQueryData(
+                    ["conversations"],
+                    (old?: ConversationPreview[]) => {
+                        if (!old) return old;
+
+                        return old.filter(
+                            (conversation) => conversation.id != group.id
+                        );
+                    }
+                );
+
+                toast({
+                    title: "Notification",
+                    description: "You have been removed from group",
+                });
+            });
+
+            socket.on("group:deleted", async (group) => {
+                client.setQueryData(
+                    ["conversations"],
+                    (old?: ConversationPreview[]) => {
+                        if (!old) return old;
+
+                        return old.filter(
+                            (conversation) => conversation.id != group.id
+                        );
+                    }
+                );
+
+                toast({
+                    title: "Notification",
+                    description: "Your group have been deleted",
+                });
+            });
+
             socketRef.current = socket;
         }
 
@@ -144,7 +216,7 @@ export default function ChatPage() {
                 socketRef.current = undefined;
             }
         };
-    }, [user, client]);
+    }, [user, client, toast]);
 
     if (status === "loading") {
         return (
@@ -180,9 +252,9 @@ export default function ChatPage() {
                             <Menu>
                                 <MenuButton>
                                     <Flex align={"center"} gap={2}>
-                                        <Avatar name={user.username} />
+                                        <Avatar name={user.displayName} />
                                         <Text whiteSpace={"nowrap"}>
-                                            {user.username}
+                                            {user.displayName}
                                         </Text>
                                     </Flex>
                                 </MenuButton>
@@ -284,7 +356,9 @@ export default function ChatPage() {
                                 : searchResult.length === 0
                                 ? "No result"
                                 : searchResult.map((user) => (
-                                      <Box key={user.id}>{user.username}</Box>
+                                      <Box key={user.id}>
+                                          {user.displayName}
+                                      </Box>
                                   ))}
                         </Box>
                     </ModalBody>

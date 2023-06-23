@@ -1,9 +1,8 @@
-const handler = require("express-async-handler");
-const User = require("../models/user.model");
+const asyncHandler = require("express-async-handler");
 const Conversation = require("../models/conversation.model");
-const io = require("../socket");
+const io = require("../utils/socket");
 
-exports.fetchConversations = handler(async (req, res) => {
+const fetchConversations = asyncHandler(async (req, res) => {
     // Query all conversations the user in
     // Not include messages
     const conversations = await Conversation.find(
@@ -11,11 +10,11 @@ exports.fetchConversations = handler(async (req, res) => {
         { messages: 0 }
     ).populate("participants latestMessage admin");
 
-    return res.status(200).json({ data: conversations });
+    res.status(200).json({ data: conversations });
 });
 
-exports.fetchOrCreateConversation = handler(async (req, res) => {
-    const { participantId } = req.body;
+const createConversation = asyncHandler(async (req, res) => {
+    const { participantId, message } = req.body;
 
     // Query single conversation by participant ids
     const conversation = await Conversation.findOne({
@@ -28,72 +27,30 @@ exports.fetchOrCreateConversation = handler(async (req, res) => {
 
     // Check if conversation exists
     if (conversation) {
-        return res.status(200).json({ data: conversation });
+        res.status(200).json({ data: conversation });
     }
+
+    const newMessage = {
+        sender: req.user,
+        content: message,
+    };
 
     // If not, create new conversation
     const newConversation = await Conversation.create({
         participants: [participantId, req.user.id],
+        messages: [newMessage],
+        latestMessage: newMessage,
     });
 
-    await newConversation.populate("participants");
+    await newConversation.populate("participants messages latestMessage");
 
-    return res.status(201).json({ data: newConversation });
+    // Send event to user
+    io.in(participantId).emit("conversation:created");
+
+    res.status(201).json({ data: newConversation });
 });
 
-exports.createGroup = handler(async (req, res) => {
-    const { groupName, groupAvatar, participantIds } = req.body;
-
-    // Create new group
-    const newConversation = await Conversation.create({
-        groupName,
-        groupAvatar,
-        participants: participantIds,
-        isGroup: true,
-        admin: req.user.id,
-    });
-
-    // Populate data
-    await newConversation.populate("participants admin");
-
-    return res.status(201).json({ data: newConversation });
-});
-
-exports.addParticipant = handler(async (req, res) => {
-    const { conversationId } = req.params;
-    const { participantId } = req.body;
-
-    // Query conversation
-    const conversation = await Conversation.findById(conversationId).populate(
-        "participants latestMessage admin"
-    );
-
-    // Check if conversation does not exists
-    if (!conversation) {
-        res.status(400);
-        throw new Error("conversation does not exists");
-    }
-
-    // Find user
-    const user = await User.findById(participantId);
-
-    // Check if user does not exists
-    if (!user) {
-        res.status(400);
-        throw new Error("user does not exists");
-    }
-
-    // Add user to group
-    conversation.participants.push(user);
-
-    await conversation.save();
-
-    return res.status(200).json({
-        data: conversation.participants,
-    });
-});
-
-exports.fetchConversation = handler(async (req, res) => {
+const fetchConversation = asyncHandler(async (req, res) => {
     const { conversationId } = req.params;
 
     // Find conversation by id
@@ -114,10 +71,43 @@ exports.fetchConversation = handler(async (req, res) => {
         throw new Error("conversation does not exists");
     }
 
-    return res.status(200).json({ data: conversation });
+    res.status(200).json({ data: conversation });
 });
 
-exports.postMessage = handler(async (req, res) => {
+const deleteConversation = asyncHandler(async (req, res) => {
+    const { conversationId } = req.params;
+
+    // Find conversation by id
+    // And user is in
+    const conversation = await Conversation.findOne(
+        {
+            $and: [
+                { _id: conversationId },
+                { participants: { $elemMatch: { $eq: req.user.id } } },
+            ],
+        },
+        { latestMessage: 0 }
+    );
+
+    // Check if conversation does not exists
+    if (!conversation) {
+        res.status(400);
+        throw new Error("conversation does not exists");
+    }
+
+    const rooms = conversation.participants
+        .filter((participant) => participant.id != req.user.id)
+        .map((participant) => participant.id);
+
+    // Delete conversation
+    await conversation.deleteOne();
+
+    io.in(rooms).emit("conversation:deleted", conversation);
+
+    res.status(204).json({ data: null });
+});
+
+const postMessage = asyncHandler(async (req, res) => {
     const { conversationId } = req.params;
     const { content } = req.body;
 
@@ -149,7 +139,54 @@ exports.postMessage = handler(async (req, res) => {
         conversation.participants
             .filter((participant) => participant.id != req.user.id)
             .map((participant) => participant.id)
-    ).emit("receivedMessage", conversation.latestMessage, conversation.id);
+    ).emit(
+        "conversation:messages:received",
+        conversation.latestMessage,
+        conversation.id
+    );
 
-    return res.json({ data: conversation.latestMessage });
+    res.json({ data: conversation.latestMessage });
 });
+
+const deleteMessage = asyncHandler(async (req, res) => {
+    const { conversationId, messageId } = req.params;
+
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation) {
+        res.status(400);
+        throw new Error("no conversation");
+    }
+
+    conversation.messages.pull({
+        _id: messageId,
+        sender: {
+            _id: req.user.id,
+        },
+    });
+
+    await conversation.save();
+
+    const rooms = conversation.participants
+        .filter((participant) => participant.id != req.user.id)
+        .map((participant) => participant.id);
+
+    io.in(rooms).emit(
+        "conversation:messages:deleted",
+        messageId,
+        conversation.id
+    );
+
+    res.status(200).json({
+        data: null,
+    });
+});
+
+module.exports = {
+    createConversation,
+    deleteConversation,
+    deleteMessage,
+    fetchConversation,
+    fetchConversations,
+    postMessage,
+};

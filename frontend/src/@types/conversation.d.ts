@@ -6,6 +6,8 @@ interface Message {
     updatedAt: string;
 }
 
+type MessageId = Message["id"];
+
 interface SingleConversation {
     id: string;
     participants: User[];
@@ -24,6 +26,7 @@ interface GroupConversation extends SingleConversation {
 }
 
 type Conversation = SingleConversation | GroupConversation;
+type ConversationId = Conversation["id"];
 
 type ConversationPreview =
     | Omit<SingleConversation, "messages">

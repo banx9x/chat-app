@@ -5,17 +5,18 @@ const logger = require("morgan");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const Joi = require("joi");
-Joi.objectId = require("joi-objectid")(Joi);
 
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const conversationsRouter = require("./routes/conversations");
-const notfound = require("./middlewares/notfound");
-const error = require("./middlewares/error");
+const groupsRouter = require("./routes/groups");
+const notFoundHandler = require("./middlewares/notfound");
+const errorHandler = require("./middlewares/error");
 
 const app = express();
 
 dotenv.config();
+Joi.objectId = require("joi-objectid")(Joi);
 
 mongoose
     .connect(process.env.DB_URI, {
@@ -36,6 +37,7 @@ app.use(cookieParser());
 
 app.use("/api/users", usersRouter);
 app.use("/api/conversations", conversationsRouter);
+app.use("/api/groups", groupsRouter);
 app.use(express.static(path.join(__dirname, "public")));
 
 if (process.env.NODE_ENV === "production") {
@@ -46,7 +48,7 @@ if (process.env.NODE_ENV === "production") {
     app.use("/", indexRouter);
 }
 
-app.use(notfound);
-app.use(error);
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 module.exports = app;

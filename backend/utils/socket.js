@@ -7,18 +7,20 @@ const io = new Server({
 });
 
 io.on("connection", (socket) => {
-    console.log("Client connection");
+    console.log("client connection");
 
-    socket.on("setup", (user) => {
-        console.log("Setup connection");
+    socket.on("socket:setup", (user) => {
+        console.log("setup connection");
 
         socket.join(user.id);
 
-        socket.emit("connected");
+        console.log(`user ${user.id} connected`);
+
+        socket.emit("socket:connected");
     });
 
     socket.on("disconnect", () => {
-        console.log("Client disconnected");
+        console.log("client disconnected");
     });
 });
 

@@ -1,8 +1,8 @@
-const handler = require("express-async-handler");
+const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 
-module.exports = handler(async (req, res, next) => {
+const authenticate = asyncHandler(async (req, res, next) => {
     if (
         req.headers.authorization &&
         req.headers.authorization.startsWith("Bearer")
@@ -15,7 +15,7 @@ module.exports = handler(async (req, res, next) => {
             const user = await User.findById(decode.id);
 
             if (!user) {
-                throw new jwt.JsonWebTokenError();
+                throw new jwt.JsonWebTokenError("invalid token");
             }
 
             req.user = user;
@@ -39,3 +39,5 @@ module.exports = handler(async (req, res, next) => {
         throw new Error("no token provide");
     }
 });
+
+module.exports = authenticate;

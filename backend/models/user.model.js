@@ -6,7 +6,7 @@ const { Schema } = mongoose;
 
 var userSchema = new Schema(
     {
-        username: {
+        displayName: {
             type: Schema.Types.String,
             required: true,
             index: "text",
@@ -44,8 +44,6 @@ var userSchema = new Schema(
         methods: {
             async checkPassword(password) {
                 const result = await bcrypt.compare(password, this.password);
-
-                console.log(result);
                 return result;
             },
             generateToken() {

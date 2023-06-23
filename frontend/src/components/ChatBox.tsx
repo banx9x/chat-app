@@ -148,7 +148,7 @@ export default function ChatBox({ conversationId }: ChatBoxProps) {
                             name={
                                 conversation?.isGroup
                                     ? conversation.groupName
-                                    : participant?.username
+                                    : participant?.displayName
                             }
                         />
 
@@ -160,7 +160,7 @@ export default function ChatBox({ conversationId }: ChatBoxProps) {
                             >
                                 {conversation?.isGroup
                                     ? conversation.groupName
-                                    : participant?.username}
+                                    : participant?.displayName}
                             </Heading>
                             <Box fontSize={"sm"} color={"gray.700"}>
                                 {conversation?.isGroup

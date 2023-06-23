@@ -1,15 +1,4 @@
-const Joi = require("joi");
-const { default: mongoose } = require("mongoose");
-
-/**
- * Handle global error
- *
- * @param {Error} error
- * @param {import("express").Request} req
- * @param {import("express").Response} res
- * @param {import("express").NextFunction} next
- */
-module.exports = (error, req, res, next) => {
+const errorHandler = (error, req, res, next) => {
     // log error
     // console.error(error);
 
@@ -23,3 +12,5 @@ module.exports = (error, req, res, next) => {
         error: error.message,
     });
 };
+
+module.exports = errorHandler;

@@ -33,7 +33,11 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
         <AuthProvider>
-            <ChakraProvider>
+            <ChakraProvider
+                toastOptions={{
+                    defaultOptions: { position: "top", duration: 10000 },
+                }}
+            >
                 <QueryClientProvider client={client}>
                     <RouterProvider router={router} />
                     <ReactQueryDevtools />

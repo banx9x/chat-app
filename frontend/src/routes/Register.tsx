@@ -25,7 +25,7 @@ import axios, { AxiosError } from "axios";
 import { useAuth } from "../contexts/auth/hooks";
 
 interface RegisterFormValues {
-    username: string;
+    displayName: string;
     email: string;
     password: string;
 }
@@ -40,20 +40,24 @@ export default function RegisterPage() {
     const navigate = useNavigate();
 
     const registerMutation = useMutation({
-        mutationFn: (data: RegisterFormValues) => {
-            return axios.post("/api/users/register", data);
+        mutationFn: async (data: RegisterFormValues) => {
+            const res = await axios.post<ServerResponse<LoginSuccess>>(
+                "/api/users/register",
+                data
+            );
+
+            return res.data.data;
         },
         onSuccess: (res) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             toast.update(toastRef.current!, {
                 title: "Register Success",
-                description: `Welcome ${res.data.data.username} 🤟`,
+                description: `Welcome ${res.data.displayName} 🤟`,
                 status: "success",
                 isClosable: true,
-                duration: 3000,
             });
 
-            loggedIn(res.data);
+            loggedIn(res);
 
             navigate("/", {
                 replace: true,
@@ -67,11 +71,10 @@ export default function RegisterPage() {
                 title: "Register Failed",
                 description:
                     axios.isAxiosError(error) && error.response
-                        ? (error.response.data as LoginFailed).error
+                        ? (error.response.data as ServerError).error
                         : error.message,
                 status: "error",
                 isClosable: true,
-                duration: 3000,
             });
         },
     });
@@ -82,9 +85,7 @@ export default function RegisterPage() {
         toastRef.current = toast({
             title: "Register...",
             status: "loading",
-            duration: 3000,
             isClosable: false,
-            position: "top",
         });
         registerMutation.mutate(values);
     };
@@ -115,11 +116,11 @@ export default function RegisterPage() {
                     >
                         <Stack spacing={4}>
                             <Box>
-                                <FormControl id="username" isRequired>
+                                <FormControl id="displayName" isRequired>
                                     <FormLabel>Your name</FormLabel>
                                     <Input
                                         type="text"
-                                        {...register("username")}
+                                        {...register("displayName")}
                                     />
                                 </FormControl>
                             </Box>

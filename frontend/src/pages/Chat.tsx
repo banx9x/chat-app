@@ -43,17 +43,25 @@ import { Socket, io } from "socket.io-client";
 import ChatBox from "../components/ChatBox";
 import ContactList from "../components/ContactList";
 import ConversationList from "../components/ConversationList";
-import { useAuth } from "../contexts/auth/hooks";
-import { useUser } from "../contexts/user/hooks";
-import { fetchConversations } from "../services/conversations";
+import useAuth from "../hooks/useAuth";
+import {
+    fetchConversations,
+    fetchOrCreateConversation,
+} from "../services/conversations";
 import { searchUser } from "../services/user";
+import useUsers from "../hooks/useUsers";
+import { Navigate } from "react-router-dom";
+import SocketProvider from "../contexts/SocketContext";
+import useUser from "../hooks/useUser";
 
 export default function ChatPage() {
-    const { loggedOut } = useAuth();
-    const { user } = useUser();
+    const { logOut } = useAuth();
+    const { currentUser } = useUser();
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [searchQuery, setSearchQuery] = useState<string>("");
     const toast = useToast();
+
+    const { data: users = [] } = useUsers();
 
     const {
         status,
@@ -76,20 +84,52 @@ export default function ChatPage() {
     });
 
     const [selectedConversationId, setSelectedConversationId] =
-        useState<Conversation["id"]>();
+        useState<ConversationId | null>(null);
+    const [selectedContactId, setSelectedContactId] = useState<UserId | null>(
+        null
+    );
+
+    const { status: findOrCreateStatus } = useQuery({
+        queryKey: ["conversation", { contact: selectedContactId }],
+        queryFn: ({ signal }) =>
+            fetchOrCreateConversation(String(selectedContactId), { signal }),
+        enabled: !!selectedContactId,
+        onSuccess: (res) => {
+            client.setQueryData(
+                ["conversations"],
+                (old?: ConversationPreview[]) => {
+                    if (!old) return old;
+
+                    if (res.isDraft) {
+                        const id = old.find(
+                            (conversation) => conversation.id == res.id
+                        );
+
+                        if (id) {
+                            return old;
+                        } else {
+                            return [...old, res];
+                        }
+                    } else {
+                        return old;
+                    }
+                }
+            );
+
+            setSelectedConversationId(res.id);
+        },
+    });
 
     const socketRef = useRef<Socket>();
     const client = useQueryClient();
 
     useEffect(() => {
-        if (user && !socketRef.current) {
+        if (currentUser && !socketRef.current) {
             const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
                 io();
 
-            socket.connect();
-
             socket.on("connect", () => {
-                socket.emit("socket:setup", user);
+                socket.emit("socket:setup", currentUser);
             });
 
             socket.on("socket:connected", () => {
@@ -106,6 +146,46 @@ export default function ChatPage() {
 
                 // auto reconnect
             });
+
+            socket.on(
+                "conversation:created",
+                (conversation: SingleConversation) => {
+                    client.setQueryData(
+                        ["conversations"],
+                        (old?: ConversationPreview[]) => {
+                            if (!old) return old;
+
+                            const exist = old.find(
+                                ({ id }) => conversation.id == id
+                            );
+
+                            console.log(exist);
+
+                            if (!exist) return [...old, conversation];
+                            else {
+                                return old.map((c) =>
+                                    c.id == conversation.id
+                                        ? {
+                                              ...c,
+                                              latestMessage:
+                                                  conversation.latestMessage,
+                                          }
+                                        : c
+                                );
+                            }
+                        }
+                    );
+
+                    client.setQueryData(
+                        ["conversation", conversation.id],
+                        (old?: SingleConversation) => {
+                            if (!old) return old;
+
+                            return conversation;
+                        }
+                    );
+                }
+            );
 
             socket.on(
                 "conversation:messages:received",
@@ -216,7 +296,7 @@ export default function ChatPage() {
                 socketRef.current = undefined;
             }
         };
-    }, [user, client, toast]);
+    }, [currentUser, client, toast]);
 
     if (status === "loading") {
         return (
@@ -228,9 +308,9 @@ export default function ChatPage() {
 
     if (error) {
         if (isAxiosError(error)) {
-            if (error.response?.status === 403) {
-                loggedOut();
-                return null;
+            if (error.response && error.response.status === 403) {
+                logOut();
+                return <Navigate to={"/"} />;
             }
         } else {
             return <Box>Something wrong :( {(error as Error).message}</Box>;
@@ -238,7 +318,7 @@ export default function ChatPage() {
     }
 
     return (
-        <Box>
+        <SocketProvider socket={socketRef.current}>
             <Skeleton isLoaded={!isLoading}>
                 <Grid
                     h={"100vh"}
@@ -252,9 +332,11 @@ export default function ChatPage() {
                             <Menu>
                                 <MenuButton>
                                     <Flex align={"center"} gap={2}>
-                                        <Avatar name={user.displayName} />
+                                        <Avatar
+                                            name={currentUser.displayName}
+                                        />
                                         <Text whiteSpace={"nowrap"}>
-                                            {user.displayName}
+                                            {currentUser.displayName}
                                         </Text>
                                     </Flex>
                                 </MenuButton>
@@ -262,7 +344,7 @@ export default function ChatPage() {
                                 <MenuList>
                                     <MenuItem>Profile</MenuItem>
                                     <MenuDivider />
-                                    <MenuItem>Logout</MenuItem>
+                                    <MenuItem onClick={logOut}>Logout</MenuItem>
                                 </MenuList>
                             </Menu>
                             <Divider border={0} />
@@ -273,7 +355,6 @@ export default function ChatPage() {
                             <IconButton
                                 icon={<AiOutlineUserAdd />}
                                 aria-label="Add friend"
-                                onClick={onOpen}
                             />
                             <IconButton
                                 icon={<AiOutlineUsergroupAdd />}
@@ -314,7 +395,10 @@ export default function ChatPage() {
                                     />
                                 </TabPanel>
                                 <TabPanel p={"0"}>
-                                    <ContactList contacts={user.friends} />
+                                    <ContactList
+                                        contacts={users}
+                                        onSelectContact={setSelectedContactId}
+                                    />
                                 </TabPanel>
                             </TabPanels>
                         </Tabs>
@@ -371,6 +455,6 @@ export default function ChatPage() {
                     </ModalFooter> */}
                 </ModalContent>
             </Modal>
-        </Box>
+        </SocketProvider>
     );
 }

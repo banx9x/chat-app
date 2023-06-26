@@ -22,7 +22,7 @@ import axios, { AxiosError } from "axios";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/auth/hooks";
+import useAuth from "../hooks/useAuth";
 
 interface LoginFormValues {
     email: string;
@@ -40,20 +40,25 @@ export default function LoginPage() {
     const navigate = useNavigate();
 
     const login = useMutation({
-        mutationFn: (credential: LoginFormValues) => {
-            return axios.post<LoginSuccess>("/api/users/login", credential);
+        mutationFn: async (credential: LoginFormValues) => {
+            const res = await axios.post<ServerResponse<LoginSuccess>>(
+                "/api/users/login",
+                credential
+            );
+
+            return res.data.data;
         },
 
         onSuccess: (res) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             toast.update(toastRef.current!, {
                 title: "Login Success",
-                description: `Welcome back ${res.data.data.displayName} 🤟`,
+                description: `Welcome back ${res.user.displayName} 🤟`,
                 status: "success",
                 isClosable: true,
             });
 
-            loggedIn(res.data);
+            loggedIn(res);
 
             navigate("/", {
                 replace: true,

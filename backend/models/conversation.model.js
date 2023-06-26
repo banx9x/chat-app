@@ -69,11 +69,15 @@ const conversationSchema = new Schema(
                 return this.isGroup;
             },
         },
+        isDraft: {
+            type: Schema.Types.Boolean,
+            required: true,
+            default: true,
+        },
     },
     {
         autoIndex: false,
         timestamps: true,
-        statics: {},
         virtuals: {},
         toJSON: {
             getters: true,
@@ -89,6 +93,7 @@ const conversationSchema = new Schema(
                 return this.admin._id.equals(user._id);
             },
         },
+        statics: {},
     }
 );
 

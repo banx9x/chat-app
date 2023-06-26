@@ -1,11 +1,21 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/user.model");
 
+const fetchUsers = asyncHandler(async (req, res) => {
+    const users = await User.find({
+        _id: { $ne: req.user.id },
+    });
+
+    res.status(200).json({
+        data: users,
+    });
+});
+
 const register = asyncHandler(async (req, res) => {
     const { displayName, email, password } = req.body;
 
     // Find user by email
-    let user = await User.findOne({ email });
+    const user = await User.findOne({ email });
 
     // Check if user already exists
     if (user) {
@@ -17,8 +27,10 @@ const register = asyncHandler(async (req, res) => {
     const newUser = await User.create({ displayName, email, password });
 
     res.status(201).json({
-        data: newUser,
-        token: newUser.generateToken(),
+        data: {
+            user: newUser,
+            token: newUser.generateToken(),
+        },
     });
 });
 
@@ -45,8 +57,10 @@ const login = asyncHandler(async (req, res) => {
     }
 
     res.status(200).json({
-        data: user,
-        token: user.generateToken(),
+        data: {
+            user,
+            token: user.generateToken(),
+        },
     });
 });
 
@@ -158,4 +172,11 @@ const search = asyncHandler(async (req, res) => {
     res.status(200).json({ data: users });
 });
 
-module.exports = { register, login, addFriend, removeFriend, search };
+module.exports = {
+    fetchUsers,
+    register,
+    login,
+    addFriend,
+    removeFriend,
+    search,
+};

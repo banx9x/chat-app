@@ -18,13 +18,13 @@ const createGroup = asyncHandler(async (req, res) => {
     // Populate data
     await newGroup.populate("participants admin");
 
-    const rooms = participantIds.map(
+    const rooms = participantIds.filter(
         (participantId) => participantId != req.user.id
     );
 
     io.in(rooms).emit("group:created", newGroup);
 
-    res.status(201).json({ data: newGroup });
+    return res.status(201).json({ data: newGroup });
 });
 
 const deleteGroup = asyncHandler(async (req, res) => {
@@ -58,7 +58,7 @@ const deleteGroup = asyncHandler(async (req, res) => {
     // Send event to participants
     io.in(rooms).emit("group:deleted", group);
 
-    res.status(204).json({ data: null });
+    return res.status(204).json({ data: null });
 });
 
 const addParticipant = asyncHandler(async (req, res) => {
@@ -74,6 +74,12 @@ const addParticipant = asyncHandler(async (req, res) => {
     if (!group) {
         res.status(400);
         throw new Error("conversation does not exists");
+    }
+
+    // Check admin
+    if (!group.isAdmin(req.user)) {
+        res.status(403);
+        throw new Error("you are not admin");
     }
 
     // Find user
@@ -98,7 +104,7 @@ const addParticipant = asyncHandler(async (req, res) => {
     io.in(participantId).emit("group:participants:added", group);
     io.in(rooms).emit("group:participants:joined", user);
 
-    res.status(200).json({
+    return res.status(200).json({
         data: group.participants,
     });
 });
@@ -133,7 +139,7 @@ const removeParticipant = asyncHandler(async (req, res) => {
     io.in(participantId).emit("group:participants:removed", group);
     io.in(rooms).emit("group:participants:left", participantId);
 
-    res.status(200).json({ data: null });
+    return res.status(200).json({ data: null });
 });
 
 module.exports = {

@@ -8,14 +8,17 @@ import {
     Input,
     Spinner,
 } from "@chakra-ui/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { useUser } from "../contexts/user/hooks";
-import { fetchConversationById, postMessage } from "../services/conversations";
-import Message from "./Message";
 import { AiOutlineSearch } from "react-icons/ai";
 import { BsLayoutSidebarReverse } from "react-icons/bs";
+import usePostMessage from "../hooks/usePostMessage";
+import useSocket from "../hooks/useSocket";
+import useUser from "../hooks/useUser";
+import useUsers from "../hooks/useUsers";
+import { fetchConversationById } from "../services/conversations";
+import Message from "./Message";
 
 interface ChatBoxProps {
     conversationId: Conversation["id"];
@@ -26,86 +29,42 @@ interface ChatFormValues {
 }
 
 export default function ChatBox({ conversationId }: ChatBoxProps) {
-    const { user } = useUser();
-    const client = useQueryClient();
-    const { register, handleSubmit, reset } = useForm<ChatFormValues>();
+    const socket = useSocket();
+    const { currentUser } = useUser();
+    const { register, handleSubmit, reset, watch } = useForm<ChatFormValues>();
     const messageBoxRef = useRef<HTMLDivElement | null>(null);
+
     const { status, data: conversation } = useQuery({
         queryKey: ["conversation", conversationId],
         queryFn: () => fetchConversationById(conversationId),
-    });
-    const messages = useMutation({
-        mutationFn: postMessage,
-        onMutate: async ({ conversationId, content }) => {
-            const newMessage: Message = {
-                id: String(Date.now()),
-                sender: user,
-                content,
-                createdAt: new Date().toLocaleString(),
-                updatedAt: new Date().toLocaleString(),
-            };
-
-            await client.cancelQueries({
-                queryKey: ["conversation", conversationId],
-            });
-
-            await client.cancelQueries({
-                queryKey: ["conversations"],
-            });
-
-            await client.cancelQueries({
-                queryKey: [],
-            });
-
-            client.setQueryData(
-                ["conversation", conversationId],
-                (old?: Conversation) => {
-                    if (!old) return old;
-
-                    return {
-                        ...old,
-                        messages: [...old.messages, newMessage],
-                        latestMessage: newMessage,
-                    };
-                }
-            );
-
-            client.setQueryData(
-                ["conversations"],
-                (old?: ConversationPreview[]) => {
-                    if (!old) return old;
-
-                    return old.map((conversation) =>
-                        conversation.id == conversationId
-                            ? { ...conversation, latestMessage: newMessage }
-                            : conversation
-                    );
-                }
-            );
-
-            reset();
-
-            return { id: newMessage.id };
-        },
-        onSuccess: (res, { conversationId }, context) => {
-            const id = context?.id;
-
-            client.setQueryData(
-                ["conversation", conversationId],
-                (old?: Conversation) => {
-                    if (!old) return old;
-
-                    return {
-                        ...old,
-                        messages: old.messages.map((message) =>
-                            message.id == id ? res : message
-                        ),
-                        latestMessage: res,
-                    };
-                }
-            );
+        onError: (error) => {
+            // if (isAxiosError(error)) {
+            //     if (error.response && error.response.status == 404) {
+            //         client.setQueryData(
+            //             ["conversation", conversationId],
+            //             () => {
+            //                 const conversation: Conversation = {
+            //                     id: "temp",
+            //                     participants: [
+            //                         currentUser,
+            //                         users.find(
+            //                             (user) => user.id == conversationId
+            //                         ) as User,
+            //                     ],
+            //                     messages: [],
+            //                     latestMessage: null,
+            //                     isGroup: false,
+            //                     createdAt: new Date().toLocaleString(),
+            //                     updatedAt: new Date().toLocaleString(),
+            //                 };
+            //                 return conversation;
+            //             }
+            //         );
+            //     }
+            // }
         },
     });
+    const postMessage = usePostMessage();
 
     useEffect(() => {
         if (messageBoxRef.current) {
@@ -113,6 +72,18 @@ export default function ChatBox({ conversationId }: ChatBoxProps) {
                 messageBoxRef.current.scrollHeight;
         }
     });
+
+    useEffect(() => {
+        const subscription = watch(({ content }) => {
+            if (content && content.trim().length > 0) {
+                socket && socket.emit("conversation:typing");
+            } else {
+                socket && socket.emit("conversation:stop-typing");
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [watch, socket]);
 
     if (status === "loading") {
         return (
@@ -123,7 +94,9 @@ export default function ChatBox({ conversationId }: ChatBoxProps) {
     }
 
     const onSubmit = (values: ChatFormValues) => {
-        messages.mutate({
+        reset();
+
+        postMessage.mutate({
             conversationId,
             content: values.content,
         });
@@ -132,7 +105,7 @@ export default function ChatBox({ conversationId }: ChatBoxProps) {
     const participant = conversation?.isGroup
         ? null
         : conversation?.participants.find(
-              (participant) => participant.id != user.id
+              (participant) => participant.id != currentUser.id
           );
 
     return (
@@ -150,6 +123,7 @@ export default function ChatBox({ conversationId }: ChatBoxProps) {
                                     ? conversation.groupName
                                     : participant?.displayName
                             }
+                            src={currentUser.avatar ?? undefined}
                         />
 
                         <Box>

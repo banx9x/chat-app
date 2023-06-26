@@ -1,20 +1,20 @@
 import { useContext } from "react";
-import { AuthContext } from "./context";
+import { AuthContext } from "../contexts/AuthContext";
 
 const useAuth = () => {
-    const { auth, dispatch } = useContext(AuthContext);
+    const { state, dispatch } = useContext(AuthContext);
 
     const loggedIn = (payload: LoginSuccess) => {
         localStorage.setItem("auth", JSON.stringify(payload));
         dispatch({ type: "authenticated", payload });
     };
 
-    const loggedOut = () => {
+    const logOut = () => {
         localStorage.removeItem("auth");
         dispatch({ type: "unauthenticated" });
     };
 
-    return { ...auth, loggedIn, loggedOut };
+    return { ...state, loggedIn, logOut };
 };
 
-export { useAuth };
+export default useAuth;

@@ -22,7 +22,7 @@ import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import { useAuth } from "../contexts/auth/hooks";
+import useAuth from "../hooks/useAuth";
 
 interface RegisterFormValues {
     displayName: string;
@@ -52,7 +52,7 @@ export default function RegisterPage() {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             toast.update(toastRef.current!, {
                 title: "Register Success",
-                description: `Welcome ${res.data.displayName} 🤟`,
+                description: `Welcome ${res.user.displayName} 🤟`,
                 status: "success",
                 isClosable: true,
             });

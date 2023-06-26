@@ -1,14 +1,14 @@
 import { Box } from "@chakra-ui/react";
-import { useUser } from "../contexts/user/hooks";
+import useUser from "../hooks/useUser";
 
 interface MessageProps {
     message: Message;
 }
 
 export default function Message({ message }: MessageProps) {
-    const { user } = useUser();
+    const { currentUser } = useUser();
 
-    const isSender = message.sender.id === user.id;
+    const isSender = message.sender.id === currentUser.id;
 
     return (
         <Box

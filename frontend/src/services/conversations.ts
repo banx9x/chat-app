@@ -1,3 +1,4 @@
+import { AxiosRequestConfig } from "axios";
 import client from "./client";
 
 export const fetchConversations = async () => {
@@ -11,6 +12,19 @@ export const fetchConversations = async () => {
 export type FetchConversationsResponse = Awaited<
     ReturnType<typeof fetchConversations>
 >;
+
+export const fetchOrCreateConversation = async (
+    participantId: UserId,
+    options: AxiosRequestConfig
+) => {
+    const res = await client.post<ServerResponse<Conversation>>(
+        "/conversations",
+        { participantId },
+        options
+    );
+
+    return res.data.data;
+};
 
 export const fetchConversationById = async (
     conversation: Conversation["id"]

@@ -11,6 +11,6 @@ interface User {
 type UserId = User["id"];
 
 interface LoginSuccess {
-    data: User;
+    user: User;
     token: string;
 }

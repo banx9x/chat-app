@@ -1,9 +1,11 @@
 import axios from "axios";
-import { AuthState } from "../contexts/auth/context";
+import { AuthState } from "../contexts/AuthContext";
 
 const client = axios.create({
     baseURL: "/api",
 });
+
+client.defaults.headers.common["Content-Type"] = "application/json";
 
 client.interceptors.request.use(
     function (config) {

@@ -4,6 +4,7 @@ const authenticate = require("../middlewares/auth");
 
 const router = express.Router();
 
+router.get("/", authenticate, controller.fetchUsers);
 router.post("/register", controller.register);
 router.post("/login", controller.login);
 // router.post("/:userId/friends", authenticate, controller.sendFriendRequest);

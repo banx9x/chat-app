@@ -3,8 +3,15 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
 const Joi = require("joi");
+
+Joi.objectId = require("joi-objectid")(Joi);
+
+if (process.env.NODE_ENV != "production") {
+    const dotenv = require("dotenv");
+
+    dotenv.config();
+}
 
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
@@ -14,9 +21,6 @@ const notFoundHandler = require("./middlewares/notfound");
 const errorHandler = require("./middlewares/error");
 
 const app = express();
-
-dotenv.config();
-Joi.objectId = require("joi-objectid")(Joi);
 
 mongoose
     .connect(process.env.DB_URI, {

@@ -14,6 +14,7 @@ interface SingleConversation {
     messages: Message[];
     latestMessage: Message | null;
     isGroup: false;
+    isDraft: boolean;
     createdAt: string;
     updatedAt: string;
 }

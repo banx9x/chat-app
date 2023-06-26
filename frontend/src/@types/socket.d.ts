@@ -33,8 +33,6 @@ interface ClientToServerEvents {
     // System
     "socket:setup": (user: User) => void;
 
-    // User
-
     // Conversation
     "conversation:typing": () => void;
     "conversation:stop-typing": () => void;

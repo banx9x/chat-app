@@ -22,6 +22,7 @@ var userSchema = new Schema(
         avatar: {
             type: Schema.Types.String,
             required: false,
+            default: null,
         },
         friends: {
             type: [Schema.Types.ObjectId],

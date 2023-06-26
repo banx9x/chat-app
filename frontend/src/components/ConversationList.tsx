@@ -6,7 +6,7 @@ import {
     Heading,
     Text,
 } from "@chakra-ui/react";
-import { useUser } from "../contexts/user/hooks";
+import useUser from "../hooks/useUser";
 
 interface ChatCardProps {
     conversation: ConversationPreview;
@@ -19,12 +19,12 @@ export function ConversationItem({
     onSelect,
     isSelected,
 }: ChatCardProps) {
-    const { user } = useUser();
+    const { currentUser } = useUser();
 
     const participant = conversation.isGroup
         ? null
         : conversation.participants.find(
-              (participant) => participant.id != user.id
+              (participant) => participant.id != currentUser.id
           );
 
     return (
@@ -45,20 +45,17 @@ export function ConversationItem({
                 />
 
                 <Flex flexDir={"column"} justify={"space-around"} gap={1}>
-                    <Heading
-                        as={"h5"}
-                        size={"sm"}
-                        fontWeight={"medium"}
-                        noOfLines={1}
-                    >
+                    <Text fontWeight={"medium"}>
                         {conversation.isGroup
                             ? conversation.groupName
                             : participant?.displayName}
-                    </Heading>
-
-                    <Text noOfLines={1} fontSize={"sm"} color={"gray.700"}>
-                        {conversation.latestMessage?.content}
                     </Text>
+
+                    {conversation.latestMessage?.content && (
+                        <Text noOfLines={1} fontSize={"sm"} color={"gray.700"}>
+                            {conversation.latestMessage.content}
+                        </Text>
+                    )}
                 </Flex>
 
                 <Flex
@@ -95,7 +92,7 @@ export function ConversationItem({
 interface ConversationListProps {
     conversations: ConversationPreview[];
     onSelectConversation: (conversationId: Conversation["id"]) => void;
-    selectedConversationId?: Conversation["id"];
+    selectedConversationId: Conversation["id"] | null;
 }
 
 export default function ConversationList({

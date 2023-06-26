@@ -1,5 +1,5 @@
 import axios from "axios";
-import { AuthState } from "../contexts/AuthContext";
+import { AuthState, Authenticated } from "../contexts/AuthContext";
 
 const client = axios.create({
     baseURL: "/api",
@@ -13,7 +13,7 @@ client.interceptors.request.use(
         const localData = localStorage.getItem("auth");
 
         if (localData) {
-            const data = JSON.parse(localData) as AuthState;
+            const data = JSON.parse(localData) as Authenticated;
 
             config.headers.setAuthorization(`Bearer ${data.token}`);
         } else {

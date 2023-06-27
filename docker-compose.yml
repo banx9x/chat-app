@@ -24,3 +24,4 @@ services:
             JWT_SECRET_TOKEN: 123456
             DB_NAME: chatapp
             DB_URI: mongodb://root:example@mongo:27017/
+            CLOUDINARY_URL: cloudinary://333631113252778:ta4kTqK9-7BQOWrCtgTah2GC1fU@banx9x

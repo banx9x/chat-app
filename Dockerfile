@@ -11,6 +11,7 @@ WORKDIR /app
 ENV DB_NAME=chatapp
 ENV DB_URI=mongodb+srv://banx9x:hSVhv4K4nAYkNnO7@cluster0.fuayoos.mongodb.net/?retryWrites=true&w=majority
 ENV JWT_SECRET_TOKEN=123456
+ENV CLOUDINARY_URL=cloudinary://333631113252778:ta4kTqK9-7BQOWrCtgTah2GC1fU@banx9x
 ENV NODE_ENV=production
 ENV PORT=80
 COPY backend/ /app/

@@ -6,7 +6,7 @@ const fetchUsers = asyncHandler(async (req, res) => {
         _id: { $ne: req.user.id },
     });
 
-    res.status(200).json({
+    return res.status(200).json({
         data: users,
     });
 });
@@ -26,7 +26,7 @@ const register = asyncHandler(async (req, res) => {
     // Create new user
     const newUser = await User.create({ displayName, email, password });
 
-    res.status(201).json({
+    return res.status(201).json({
         data: {
             user: newUser,
             token: newUser.generateToken(),
@@ -42,9 +42,9 @@ const login = asyncHandler(async (req, res) => {
 
     // Check if user does not exists
     if (!user) {
-        res.status(400).json({
-            error: "invalid email or password",
-        });
+        res.status(400);
+
+        throw new Error("invalid email or password");
     }
 
     // Compare password
@@ -56,7 +56,7 @@ const login = asyncHandler(async (req, res) => {
         throw new Error("invalid email or password");
     }
 
-    res.status(200).json({
+    return res.status(200).json({
         data: {
             user,
             token: user.generateToken(),
@@ -95,7 +95,7 @@ const addFriend = asyncHandler(async (req, res) => {
     await session.commitTransaction();
     await session.endSession();
 
-    res.status(200).json({
+    return res.status(200).json({
         data: req.user.friends,
     });
 });
@@ -121,7 +121,7 @@ const removeFriend = asyncHandler(async (req, res) => {
     req.user.friends.pull({ _id: user.id });
     await req.user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
         data: req.user.friends,
     });
 });
@@ -169,7 +169,18 @@ const search = asyncHandler(async (req, res) => {
         }
     });
 
-    res.status(200).json({ data: users });
+    return res.status(200).json({ data: users });
+});
+
+const updateProfile = asyncHandler(async (req, res) => {
+    req.user.avatar = req.body.avatar;
+    req.user.displayName = req.body.displayName;
+
+    await req.user.save();
+
+    return res.status(200).json({
+        data: req.user,
+    });
 });
 
 module.exports = {
@@ -179,4 +190,5 @@ module.exports = {
     addFriend,
     removeFriend,
     search,
+    updateProfile,
 };

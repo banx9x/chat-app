@@ -10,7 +10,7 @@ const fetchConversations = asyncHandler(async (req, res) => {
         { messages: 0 }
     ).populate("participants latestMessage admin");
 
-    res.status(200).json({ data: conversations });
+    return res.status(200).json({ data: conversations });
 });
 
 const fetchOrCreateConversation = asyncHandler(async (req, res) => {
@@ -133,7 +133,7 @@ const deleteConversation = asyncHandler(async (req, res) => {
 
     io.in(rooms).emit("conversation:deleted", conversation);
 
-    res.status(204).json({ data: null });
+    return res.status(204).json({ data: null });
 });
 
 const postMessage = asyncHandler(async (req, res) => {
@@ -189,7 +189,7 @@ const postMessage = asyncHandler(async (req, res) => {
         );
     }
 
-    res.json({ data: conversation.latestMessage });
+    return res.status(201).json({ data: conversation.latestMessage });
 });
 
 const deleteMessage = asyncHandler(async (req, res) => {
@@ -221,7 +221,7 @@ const deleteMessage = asyncHandler(async (req, res) => {
         conversation.id
     );
 
-    res.status(200).json({
+    res.status(204).json({
         data: null,
     });
 });

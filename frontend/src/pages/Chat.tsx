@@ -1,6 +1,7 @@
 import {
     Avatar,
     Box,
+    Button,
     Center,
     Divider,
     Flex,
@@ -17,6 +18,7 @@ import {
     ModalBody,
     ModalCloseButton,
     ModalContent,
+    ModalFooter,
     ModalHeader,
     ModalOverlay,
     Skeleton,
@@ -53,6 +55,7 @@ import useUsers from "../hooks/useUsers";
 import { Navigate } from "react-router-dom";
 import SocketProvider from "../contexts/SocketContext";
 import useUser from "../hooks/useUser";
+import UserProfile from "../components/Profile";
 
 export default function ChatPage() {
     const { logOut } = useAuth();
@@ -334,6 +337,7 @@ export default function ChatPage() {
                                     <Flex align={"center"} gap={2}>
                                         <Avatar
                                             name={currentUser.displayName}
+                                            src={currentUser.avatar}
                                         />
                                         <Text whiteSpace={"nowrap"}>
                                             {currentUser.displayName}
@@ -342,7 +346,9 @@ export default function ChatPage() {
                                 </MenuButton>
 
                                 <MenuList>
-                                    <MenuItem>Profile</MenuItem>
+                                    <MenuItem onClick={onOpen}>
+                                        Profile
+                                    </MenuItem>
                                     <MenuDivider />
                                     <MenuItem onClick={logOut}>Logout</MenuItem>
                                 </MenuList>
@@ -412,7 +418,7 @@ export default function ChatPage() {
                 </Grid>
             </Skeleton>
 
-            <Modal
+            {/* <Modal
                 isOpen={isOpen}
                 onClose={onClose}
                 onCloseComplete={() => {
@@ -447,12 +453,22 @@ export default function ChatPage() {
                         </Box>
                     </ModalBody>
 
-                    {/* <ModalFooter>
+                    <ModalFooter>
                         <Button colorScheme="purple" mr={3} onClick={onClose}>
                             Close
                         </Button>
                         <Button variant="ghost">Secondary Action</Button>
-                    </ModalFooter> */}
+                    </ModalFooter>
+                </ModalContent>
+            </Modal> */}
+
+            <Modal isOpen={isOpen} onClose={onClose}>
+                <ModalOverlay />
+                <ModalContent>
+                    <ModalCloseButton />
+                    <ModalBody minH={"48"}>
+                        <UserProfile user={currentUser} />
+                    </ModalBody>
                 </ModalContent>
             </Modal>
         </SocketProvider>

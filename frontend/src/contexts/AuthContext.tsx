@@ -9,6 +9,7 @@ export type AuthState = Authenticated | null;
 
 export type AuthAction =
     | { type: "authenticated"; payload: LoginSuccess }
+    | { type: "profileChanged"; payload: User }
     | { type: "unauthenticated" };
 
 export interface AuthContextObject {
@@ -20,12 +21,23 @@ export const AuthContext = createContext<AuthContextObject>(
     {} as AuthContextObject
 );
 
-const authReducer = (_state: AuthState, action: AuthAction): AuthState => {
+const authReducer = (state: AuthState, action: AuthAction): AuthState => {
     switch (action.type) {
         case "authenticated": {
             return {
                 currentUser: action.payload.user,
                 token: action.payload.token,
+            };
+        }
+
+        case "profileChanged": {
+            if (!state) return state;
+
+            console.log(action.payload);
+
+            return {
+                currentUser: action.payload,
+                token: state.token,
             };
         }
 
@@ -54,7 +66,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
                 const json = JSON.parse(local);
 
                 return {
-                    currentUser: json.user,
+                    currentUser: json.currentUser,
                     token: json.token,
                 };
             } else {

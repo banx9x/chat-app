@@ -1,7 +1,7 @@
 interface User {
     id: string;
     displayName: string;
-    avatar: string | null;
+    avatar?: string;
     email: string;
     friends: User[];
     createdAt: string;

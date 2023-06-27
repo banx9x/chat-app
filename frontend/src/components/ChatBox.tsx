@@ -123,7 +123,11 @@ export default function ChatBox({ conversationId }: ChatBoxProps) {
                                     ? conversation.groupName
                                     : participant?.displayName
                             }
-                            src={currentUser.avatar ?? undefined}
+                            src={
+                                conversation?.isGroup
+                                    ? conversation.groupAvatar
+                                    : participant?.avatar
+                            }
                         />
 
                         <Box>
